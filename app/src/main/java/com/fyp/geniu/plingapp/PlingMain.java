@@ -1,15 +1,24 @@
 package com.fyp.geniu.plingapp;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.location.Address;
+import android.location.Criteria;
 import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
@@ -24,10 +33,16 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
 
     GoogleMap mMap;
     Marker marker;
+    Location location;
+    LocationManager locationManager;
+    GPSTracker tracker;
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        Log.v("Maps", "Map Ready");
         mMap = googleMap;
+        mMap.setMyLocationEnabled(true);
     }
 
     @Override
@@ -37,44 +52,13 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
         SupportMapFragment mapFrag = (SupportMapFragment)
                 getSupportFragmentManager().
                         findFragmentById(R.id.map);
-        mapFrag.getMapAsync(this);
+        tracker = new GPSTracker(this);
 
+
+
+        mapFrag.getMapAsync(this);
         onHostClickSetup();
         onViewClickSetup();
-
-
-
-        mMap = mapFrag.getMap();
-
-        if (mMap != null) {
-
-            mMap.setOnMapLongClickListener(new
-                                                   GoogleMap.OnMapLongClickListener() {
-                                                       @Override
-                                                       public void onMapLongClick(LatLng latLng) {
-                                                           Geocoder geocoder =
-                                                                   new Geocoder(PlingMain.this);
-                                                           List<Address> list;
-                                                           try {
-                                                               list = geocoder.getFromLocation(latLng.latitude,
-                                                                       latLng.longitude, 1);
-                                                           } catch (IOException e) {
-                                                               return;
-                                                           }
-                                                           Address address = list.get(0);
-                                                           if (marker != null) {
-                                                               marker.remove();
-                                                           }
-
-                                                           MarkerOptions options = new MarkerOptions()
-                                                                   .title(address.getLocality())
-                                                                   .position(new LatLng(latLng.latitude,
-                                                                           latLng.longitude));
-
-                                                           marker = mMap.addMarker(options);
-                                                       }
-                                                   });
-        }
     }
 
     /**
@@ -87,10 +71,7 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
 
         Button btnHost = (Button) findViewById(R.id.btnHost);
         btnHost.setOnClickListener(new View.OnClickListener() {
-
-
             public void onClick(View v) {
-
                 HostEvent();
             }
         });
@@ -100,8 +81,6 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
 
         Button btnView = (Button) findViewById(R.id.btnView);
         btnView.setOnClickListener(new View.OnClickListener() {
-
-
             public void onClick(View v) {
 
                 ViewEvent();
@@ -122,6 +101,29 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
         Toast.makeText(PlingMain.this, "Event view method called, but not yet written.", Toast.LENGTH_LONG).show();
 
         // Add a new intent to open a ViewEvent class type doodad
+
+    }
+
+
+    private void drawMarker() {
+        mMap.clear();
+
+        Log.v("Maps", "starting draw");
+        location = tracker.getLocation();
+
+        //  convert the location object to a LatLng object that can be used by the map API
+        LatLng currentPosition = new LatLng(location.getLatitude(),location.getLongitude());
+
+        Log.v("Maps", "LatLong received, " + currentPosition.toString());
+
+        // zoom to the current location
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentPosition, 16));
+
+        // add a marker to the map indicating our current position
+        mMap.addMarker(new MarkerOptions()
+                .position(currentPosition)
+                .snippet(currentPosition.toString()));
+
 
     }
 }
