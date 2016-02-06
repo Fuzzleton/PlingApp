@@ -81,6 +81,8 @@ public class LoginActivity extends AppCompatActivity {
                 Log.d("Login", "Reply Received here too!");
                 Toast.makeText(LoginActivity.this, "Connected.", Toast.LENGTH_LONG).show();
 
+
+                startActivity(new Intent(LoginActivity.this, PlingMain.class));
             }
 
         } catch (Exception ex) {
