@@ -39,6 +39,11 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
                         findFragmentById(R.id.map);
         mapFrag.getMapAsync(this);
 
+        onHostClickSetup();
+        onViewClickSetup();
+
+
+
         mMap = mapFrag.getMap();
 
         if (mMap != null) {
@@ -78,7 +83,7 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
      */
 
 
-    private void onHostClick() {
+    private void onHostClickSetup() {
 
         Button btnHost = (Button) findViewById(R.id.btnHost);
         btnHost.setOnClickListener(new View.OnClickListener() {
@@ -91,7 +96,7 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
         });
     }
 
-    private void onViewClick() {
+    private void onViewClickSetup() {
 
         Button btnView = (Button) findViewById(R.id.btnView);
         btnView.setOnClickListener(new View.OnClickListener() {
