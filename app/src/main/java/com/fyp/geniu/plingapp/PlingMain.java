@@ -1,6 +1,8 @@
 package com.fyp.geniu.plingapp;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Criteria;
@@ -28,7 +30,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import java.io.IOException;
 import java.util.List;
 
-public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
+public class PlingMain extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener {
 
 
     GoogleMap mMap;
@@ -36,6 +38,7 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
     Location location;
     LocationManager locationManager;
     GPSTracker tracker;
+    Marker mrkMyMarker;
 
 
     @Override
@@ -43,7 +46,12 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
         Log.v("Maps", "Map Ready");
         mMap = googleMap;
         mMap.setMyLocationEnabled(true);
+        mMap.setOnMapLongClickListener(this);
+        zoomToCurrentPosition();
+        mMap.setOnMarkerClickListener(this);
+
     }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,7 +61,6 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
                 getSupportFragmentManager().
                         findFragmentById(R.id.map);
         tracker = new GPSTracker(this);
-
 
 
         mapFrag.getMapAsync(this);
@@ -66,6 +73,16 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
      * This is where we can add markers or lines, add listeners or move the camera.
      */
 
+
+
+
+    private void SetMyMarker(LatLng point){
+        ///set marker here at long click location
+
+        if (mrkMyMarker != null) mrkMyMarker.remove();
+
+        mrkMyMarker = mMap.addMarker(new MarkerOptions().position(point).draggable(false));
+    }
 
     private void onHostClickSetup() {
 
@@ -105,9 +122,7 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
     }
 
 
-    private void drawMarker() {
-        mMap.clear();
-
+    private void zoomToCurrentPosition() {
         Log.v("Maps", "starting draw");
         location = tracker.getLocation();
 
@@ -118,12 +133,35 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback {
 
         // zoom to the current location
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentPosition, 16));
+    }
 
-        // add a marker to the map indicating our current position
-        mMap.addMarker(new MarkerOptions()
-                .position(currentPosition)
-                .snippet(currentPosition.toString()));
+    @Override
+    public void onMapLongClick(LatLng latLng) {
+        SetMyMarker(latLng);
+    }
 
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
+        builder.setMessage("Do you want to delete the marker?").setTitle("Marker Deletion");
+
+        builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                mrkMyMarker.remove();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                //nothing
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+
+        dialog.show();
+
+        return false;
     }
 }
