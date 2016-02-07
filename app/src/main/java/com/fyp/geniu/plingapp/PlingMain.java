@@ -16,6 +16,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -39,6 +41,7 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
     LocationManager locationManager;
     GPSTracker tracker;
     Marker mrkMyMarker;
+    Boolean isMyMarkerRemoved = true;
 
 
     @Override
@@ -80,8 +83,10 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
         ///set marker here at long click location
 
         if (mrkMyMarker != null) mrkMyMarker.remove();
+        isMyMarkerRemoved = true;
 
         mrkMyMarker = mMap.addMarker(new MarkerOptions().position(point).draggable(false));
+        isMyMarkerRemoved = false;
     }
 
     private void onHostClickSetup() {
@@ -107,8 +112,38 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
 
     private void HostEvent() {
 
-        Toast.makeText(PlingMain.this, "Event host method called, but not yet written.", Toast.LENGTH_LONG).show();
 
+
+        if (isMyMarkerRemoved) {
+            mrkMyMarker = mMap.addMarker(new MarkerOptions().position(new LatLng(tracker.getLatitude(),tracker.getLongitude())));
+            isMyMarkerRemoved = false;
+        }
+
+
+
+        AlertDialog.Builder hostDialog = new AlertDialog.Builder(this);
+
+        hostDialog.setTitle("Host Event Description");
+        final EditText input = new EditText(this);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.MATCH_PARENT);
+        //input.setLayoutParams(lp);
+        hostDialog.setView(input);
+
+
+        hostDialog.setPositiveButton("Host", new DialogInterface.OnClickListener() {
+
+
+            public void onClick(DialogInterface dialog, int which) {
+                Toast.makeText(PlingMain.this, "A Thing was Done.", Toast.LENGTH_LONG).show();
+            }
+        });
+        hostDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                //nothing
+            }
+        });
+        hostDialog.show();
         // Add a new intent to open a HostEvent class type doodad
 
     }
@@ -149,6 +184,7 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
         builder.setPositiveButton("Delete", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 mrkMyMarker.remove();
+                isMyMarkerRemoved = true;
             }
         });
 
