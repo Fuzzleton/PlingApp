@@ -2,7 +2,9 @@ package com.fyp.geniu.plingapp;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Criteria;
@@ -10,9 +12,12 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -29,7 +34,13 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.LinkedList;
 import java.util.List;
 
 public class PlingMain extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener {
@@ -42,6 +53,7 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
     GPSTracker tracker;
     Marker mrkMyMarker;
     Boolean isMyMarkerRemoved = true;
+    LinkedList<Marker> llstEventMarkers = new LinkedList<>();
 
 
     @Override
@@ -132,10 +144,41 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
 
 
         hostDialog.setPositiveButton("Host", new DialogInterface.OnClickListener() {
-
-
             public void onClick(DialogInterface dialog, int which) {
-                Toast.makeText(PlingMain.this, "A Thing was Done.", Toast.LENGTH_LONG).show();
+
+                JSONObject json = new JSONObject();
+
+                SharedPreferences settings = getSharedPreferences("prefs", 0);
+
+
+                String desc = null;
+                try {
+                    desc = java.net.URLEncoder.encode(input.getText().toString(),"UTF-8").replace("+","%20");
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+
+
+                try {
+                    json.put("sourcemac",getMAC());
+                    json.put("location",mrkMyMarker.getPosition().latitude+","+mrkMyMarker.getPosition().longitude);
+                    json.put("description", desc);
+
+
+                    NetworkAgentBridge br = new NetworkAgentBridge();
+                    String response = br.ServerRequest(settings.getString("IPADDRESS", null),"host_event"+json.toString());
+
+                    if (response == "registered") {
+
+                        Toast.makeText(PlingMain.this, "Event Registered!", Toast.LENGTH_LONG).show();
+
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+
             }
         });
         hostDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -150,9 +193,46 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
 
     private void ViewEvent() {
 
+        for (int i = 0; i < llstEventMarkers.size() ; i++) {
+            llstEventMarkers.get(i).remove();
+
+        }
+
+        llstEventMarkers.clear();
+
         Toast.makeText(PlingMain.this, "Event view method called, but not yet written.", Toast.LENGTH_LONG).show();
 
+
+        SharedPreferences settings = getSharedPreferences("prefs", 0);
+        NetworkAgentBridge br = new NetworkAgentBridge();
+        String reply = br.ServerRequest(settings.getString("IPADDRESS",null),"get_events");
         // Add a new intent to open a ViewEvent class type doodad
+
+        JSONArray array = null;
+        try {
+            array = new JSONArray(reply);
+
+        for (int i = 0 ; i < array.length() ; i++) {
+            MarkerOptions mrkopt = new MarkerOptions();
+            mrkopt.title(array.getJSONObject(i).getString("sourcemac"));
+            mrkopt.snippet(array.getJSONObject(i).getString("description"));
+
+            String[] latlong =  array.getJSONObject(i).getString("latlong").split(",");
+            double latitude = Double.parseDouble(latlong[0]);
+            double longitude = Double.parseDouble(latlong[1]);
+
+            mrkopt.position(new LatLng(latitude,longitude));
+
+            Marker mrk = mMap.addMarker(mrkopt);
+            llstEventMarkers.add(mrk);
+
+
+
+        }
+    } catch (JSONException e) {
+        e.printStackTrace();
+    }
+
 
     }
 
@@ -199,5 +279,11 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
         dialog.show();
 
         return false;
+    }
+
+    public String getMAC(){
+        WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+        WifiInfo info = manager.getConnectionInfo();
+        return info.getMacAddress();
     }
 }

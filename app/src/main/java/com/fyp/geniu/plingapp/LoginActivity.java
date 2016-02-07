@@ -65,6 +65,7 @@ public class LoginActivity extends AppCompatActivity {
         SharedPreferences settings = getSharedPreferences("prefs",0);
         SharedPreferences.Editor editor = settings.edit();
         editor.putString("IPADDRESS",strIPADDRESS);
+        editor.commit();
 
         WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
         WifiInfo info = manager.getConnectionInfo();
