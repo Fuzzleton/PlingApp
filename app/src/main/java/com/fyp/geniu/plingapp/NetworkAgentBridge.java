@@ -37,11 +37,10 @@ import java.util.concurrent.ExecutionException;
  */
 public class NetworkAgentBridge {
 
+
+    /*Starts Async Worker to handle network activity*/
     public  String ServerRequest(String strURL, String strMSG){
-
-
         String address = "http://" + strURL + "/" + strMSG;
-
         try {
             return new AsyncWorker().execute(address).get();
         } catch (InterruptedException e) {
@@ -49,34 +48,27 @@ public class NetworkAgentBridge {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-
+        //if network failed, return a failure
         return "failure";
-
-
     }
 
-
+    //Async worker that handles network
     private class AsyncWorker extends AsyncTask<String,Integer, String>{
 
 
         protected String doInBackground(String ... url) {
 
-
-
             String reply = "";
             InputStream response = null;
             URLConnection connection = null;
             try {
+                //Makes the Network connection, and gets the HTTP response
                 response = new URL(url[0]).openStream();
                 Log.d("Network","Conection Setup");
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-
             // Converts the Input Stream into a string for us to use
-
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(response,"UTF-8"))) {
                 for (String line; (line = reader.readLine()) != null;) {
                     reply += line;
@@ -86,16 +78,9 @@ public class NetworkAgentBridge {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
             Log.d("Network","Reply is " + reply);
             return reply;
         }
-
-
-
-
-
-
 
     }
 
