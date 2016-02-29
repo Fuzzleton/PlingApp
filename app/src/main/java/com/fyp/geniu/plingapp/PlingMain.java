@@ -127,8 +127,15 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
         //Builds the dialog asking user to supply a description for the event
         AlertDialog.Builder hostDialog = new AlertDialog.Builder(this);
         hostDialog.setTitle("Host Event Description");
-        final EditText input = new EditText(this);
-        hostDialog.setView(input);
+        final EditText edtTitle = new EditText(this);
+        final EditText edtDesc = new EditText(this);
+        edtTitle.setHint("Title");
+        edtDesc.setHint("Description");
+        LinearLayout liLContent = new LinearLayout(this);
+        liLContent.setOrientation(LinearLayout.HORIZONTAL);
+        liLContent.addView(edtTitle);
+        liLContent.addView(edtDesc);
+        hostDialog.setView(liLContent);
 
         //if the user clicks host
         hostDialog.setPositiveButton("Host", new DialogInterface.OnClickListener() {
@@ -137,25 +144,20 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
                 JSONObject json = new JSONObject();
                 SharedPreferences settings = getSharedPreferences("prefs", 0);
 
-                //gets the input from, and makes it http friendly
-                String desc = null;
-                try {
-                    desc = java.net.URLEncoder.encode(input.getText().toString(),"UTF-8").replace("+","%20");
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
+
 
                 //Working with JSON and Sending info
                 try {
                     //Assembles the JSON document
-                    json.put("sourcemac",getMAC());
-                    json.put("location",mrkMyMarker.getPosition().latitude+","+mrkMyMarker.getPosition().longitude);
-                    json.put("description", desc);
+                    json.put("name",settings.getString("USERNAME","Unknown"));
+                    json.put("latlng",mrkMyMarker.getPosition().latitude+","+mrkMyMarker.getPosition().longitude);
+                    json.put("description", edtDesc.getText().toString());
+                    json.put("title",edtTitle.getText().toString());
 
                     //Sends the Host Event http request to the server, and gets the response
                     //Event registration and hosting is handled serverside
-                    NetworkAgentBridge br = new NetworkAgentBridge();
-                    String response = br.ServerRequest(settings.getString("IPADDRESS", null),"host_event"+json.toString());
+                    NetworkAgentBridge br = new NetworkAgentBridge(PlingMain.this);
+                    String response = br.ServerRequest("host_event",json.toString());
 
 
                     //if response from server is registered, notify user of success
@@ -194,8 +196,8 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
         SharedPreferences settings = getSharedPreferences("prefs", 0);
 
         //Starts NetworkAgentBridge and sends a request to view all current events
-        NetworkAgentBridge br = new NetworkAgentBridge();
-        String reply = br.ServerRequest(settings.getString("IPADDRESS",null),"get_events");
+        NetworkAgentBridge br = new NetworkAgentBridge(this);
+        String reply = br.ServerRequest("view_events","nan");
 
 
         //Handles the JSON response from the server
@@ -209,7 +211,7 @@ public class PlingMain extends FragmentActivity implements OnMapReadyCallback, G
             for (int i = 0 ; i < array.length() ; i++) {
                 //Sets up the Markers for each event.
                 MarkerOptions mrkopt = new MarkerOptions();
-                mrkopt.title(array.getJSONObject(i).getString("sourcemac"));
+                mrkopt.title(array.getJSONObject(i).getString("owner") + ":" + array.getJSONObject(i).getString("title"));
                 mrkopt.snippet(array.getJSONObject(i).getString("description"));
                 String[] latlong =  array.getJSONObject(i).getString("latlong").split(",");
                 double latitude = Double.parseDouble(latlong[0]);

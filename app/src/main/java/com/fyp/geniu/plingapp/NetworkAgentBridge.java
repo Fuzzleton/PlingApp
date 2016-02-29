@@ -30,17 +30,32 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.concurrent.ExecutionException;
 
 /**
  * Created by Kieran on 25/01/2016.
  */
 public class NetworkAgentBridge {
+    Context context;
+
+    public NetworkAgentBridge(Context c){
+        context = c;
+    }
 
 
     /*Starts Async Worker to handle network activity*/
-    public  String ServerRequest(String strURL, String strMSG){
-        String address = "http://" + strURL + "/" + strMSG;
+    public  String ServerRequest(String request_type, String content){
+
+        SharedPreferences settings = context.getSharedPreferences("prefs",0);
+
+        try {
+            content = URLEncoder.encode(content, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        String address = "http://" + settings.getString("IPADDRESS",null) + "/" + request_type + "?" + content;
         try {
             return new AsyncWorker().execute(address).get();
         } catch (InterruptedException e) {

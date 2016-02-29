@@ -18,14 +18,25 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import org.json.JSONObject;
+
 import java.io.IOException;
 
 public class LoginActivity extends AppCompatActivity {
+
+    SharedPreferences settings;
+    EditText edtIpAddress;
+    EditText edtUsername;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+        settings = getSharedPreferences("prefs",0);
+        edtIpAddress = (EditText) findViewById(R.id.txtServerAddress);
+        edtUsername = (EditText) findViewById(R.id.txtUsername);
+        edtIpAddress.setText(settings.getString("IPADDRESS",""));
+        edtUsername.setText(settings.getString("USERNAME",""));
         ButtonSwitch();
     }
 
@@ -47,35 +58,31 @@ public class LoginActivity extends AppCompatActivity {
     //Then loads PlingMain
     private void ButtonClicked() {
 
-        //Gets the content of whatever is put into the textfield/EditText on the Login screen, which is the IP Address of the 'server'
-        EditText EDTipaddress = (EditText) findViewById(R.id.txtServerAddress);
-        String strIPADDRESS = EDTipaddress.getText().toString();
-
 
         //puts the IP address into shared preferences for later use
-        SharedPreferences settings = getSharedPreferences("prefs",0);
+        settings = getSharedPreferences("prefs",0);
         SharedPreferences.Editor editor = settings.edit();
-        editor.putString("IPADDRESS",strIPADDRESS);
+        editor.putString("IPADDRESS",edtIpAddress.getText().toString());
+        editor.putString("USERNAME", edtUsername.getText().toString());
         editor.commit();
 
 
-        //Fetches the Mac Address of the device
-        WifiManager manager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-        WifiInfo info = manager.getConnectionInfo();
-        String strMac = info.getMacAddress();
 
         //Assembles the request string
-        String MSG = "connect" +strMac;
+        String MSG = "connect" +edtUsername.getText().toString();
+
 
         try {
             //Uses NetworkAgentBridge class to send request to server
-            NetworkAgentBridge br = new NetworkAgentBridge();
-            String Reply = br.ServerRequest(strIPADDRESS,MSG);
+            NetworkAgentBridge br = new NetworkAgentBridge(this);
+            String Reply = br.ServerRequest("register","nan");
             Log.d("Login","And reply here is {" + Reply + "}");
+
+            JSONObject jsonReply = new JSONObject(Reply);
 
 
             //if the page returns has 'true' in it
-            if (Reply.contains("true")) {
+            if (jsonReply.getString("reply").contains("0")) {
 
                 //notify user of successful request
                 Toast.makeText(LoginActivity.this, "Connected.", Toast.LENGTH_LONG).show();
